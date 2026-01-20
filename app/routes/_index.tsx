@@ -1,12 +1,9 @@
-import {Await, useLoaderData, Link} from 'react-router';
+import {Await, useLoaderData} from 'react-router';
 import type {Route} from './+types/_index';
 import {Suspense} from 'react';
-import {Image} from '@shopify/hydrogen';
-import type {
-  FeaturedCollectionFragment,
-  RecommendedProductsQuery,
-} from 'storefrontapi.generated';
+import type {RecommendedProductsQuery} from 'storefrontapi.generated';
 import {ProductItem} from '~/components/ProductItem';
+import {HeroSection} from '~/components/HeroSection';
 
 export const meta: Route.MetaFunction = () => {
   return [{title: 'Hydrogen | Home'}];
@@ -58,35 +55,29 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 
 export default function Homepage() {
   const data = useLoaderData<typeof loader>();
+  const featuredCollection = data.featuredCollection;
+
   return (
     <div className="home">
-      <FeaturedCollection collection={data.featuredCollection} />
+      <HeroSection
+        size="full"
+        title={featuredCollection?.title || 'Welcome to AIRA Publishing'}
+        subtitle={featuredCollection?.description || 'Discover curated collections and exceptional products'}
+        image={featuredCollection?.image || null}
+        cta={
+          featuredCollection
+            ? {
+                text: 'Shop Now',
+                url: `/collections/${featuredCollection.handle}`,
+              }
+            : undefined
+        }
+      />
       <RecommendedProducts products={data.recommendedProducts} />
     </div>
   );
 }
 
-function FeaturedCollection({
-  collection,
-}: {
-  collection: FeaturedCollectionFragment;
-}) {
-  if (!collection) return null;
-  const image = collection?.image;
-  return (
-    <Link
-      className="featured-collection"
-      to={`/collections/${collection.handle}`}
-    >
-      {image && (
-        <div className="featured-collection-image">
-          <Image data={image} sizes="100vw" />
-        </div>
-      )}
-      <h1>{collection.title}</h1>
-    </Link>
-  );
-}
 
 function RecommendedProducts({
   products,
@@ -118,6 +109,7 @@ const FEATURED_COLLECTION_QUERY = `#graphql
   fragment FeaturedCollection on Collection {
     id
     title
+    description
     image {
       id
       url
