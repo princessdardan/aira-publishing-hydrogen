@@ -94,33 +94,33 @@ describe('HeroSection', () => {
     it('applies size-specific title font classes for full size', () => {
       render(<HeroSection title="Test" size="full" />);
       const heading = screen.getByRole('heading', {level: 1});
-      expect(heading).toHaveClass('text-5xl');
-      expect(heading).toHaveClass('md:text-7xl');
-      expect(heading).toHaveClass('lg:text-8xl');
+      expect(heading).toHaveClass('text-4xl');
+      expect(heading).toHaveClass('md:text-5xl');
+      expect(heading).toHaveClass('lg:text-6xl');
     });
 
     it('applies size-specific title font classes for large size', () => {
       render(<HeroSection title="Test" size="large" />);
       const heading = screen.getByRole('heading', {level: 1});
       expect(heading).toHaveClass('text-4xl');
-      expect(heading).toHaveClass('md:text-6xl');
-      expect(heading).toHaveClass('lg:text-7xl');
+      expect(heading).toHaveClass('md:text-5xl');
+      expect(heading).toHaveClass('lg:text-6xl');
     });
 
     it('applies size-specific title font classes for medium size', () => {
       render(<HeroSection title="Test" size="medium" />);
       const heading = screen.getByRole('heading', {level: 1});
       expect(heading).toHaveClass('text-3xl');
-      expect(heading).toHaveClass('md:text-5xl');
-      expect(heading).toHaveClass('lg:text-6xl');
+      expect(heading).toHaveClass('md:text-4xl');
+      expect(heading).toHaveClass('lg:text-5xl');
     });
 
     it('applies size-specific title font classes for small size', () => {
       render(<HeroSection title="Test" size="small" />);
       const heading = screen.getByRole('heading', {level: 1});
       expect(heading).toHaveClass('text-2xl');
-      expect(heading).toHaveClass('md:text-4xl');
-      expect(heading).toHaveClass('lg:text-5xl');
+      expect(heading).toHaveClass('md:text-3xl');
+      expect(heading).toHaveClass('lg:text-4xl');
     });
 
     it('applies larger subtitle font for full and large sizes', () => {
@@ -128,15 +128,15 @@ describe('HeroSection', () => {
         <HeroSection title="Test" size="full" subtitle="Subtitle" />,
       );
       let subtitle = screen.getByText('Subtitle');
-      expect(subtitle).toHaveClass('text-lg');
-      expect(subtitle).toHaveClass('md:text-xl');
-      expect(subtitle).toHaveClass('lg:text-2xl');
+      expect(subtitle).toHaveClass('text-sm');
+      expect(subtitle).toHaveClass('md:text-base');
+      expect(subtitle).toHaveClass('lg:text-lg');
 
       rerender(<HeroSection title="Test" size="large" subtitle="Subtitle" />);
       subtitle = screen.getByText('Subtitle');
-      expect(subtitle).toHaveClass('text-lg');
-      expect(subtitle).toHaveClass('md:text-xl');
-      expect(subtitle).toHaveClass('lg:text-2xl');
+      expect(subtitle).toHaveClass('text-sm');
+      expect(subtitle).toHaveClass('md:text-base');
+      expect(subtitle).toHaveClass('lg:text-lg');
     });
 
     it('applies smaller subtitle font for medium and small sizes', () => {
@@ -144,15 +144,13 @@ describe('HeroSection', () => {
         <HeroSection title="Test" size="medium" subtitle="Subtitle" />,
       );
       let subtitle = screen.getByText('Subtitle');
-      expect(subtitle).toHaveClass('text-base');
-      expect(subtitle).toHaveClass('md:text-lg');
-      expect(subtitle).toHaveClass('lg:text-xl');
+      expect(subtitle).toHaveClass('text-sm');
+      expect(subtitle).toHaveClass('md:text-base');
 
       rerender(<HeroSection title="Test" size="small" subtitle="Subtitle" />);
       subtitle = screen.getByText('Subtitle');
-      expect(subtitle).toHaveClass('text-base');
-      expect(subtitle).toHaveClass('md:text-lg');
-      expect(subtitle).toHaveClass('lg:text-xl');
+      expect(subtitle).toHaveClass('text-sm');
+      expect(subtitle).toHaveClass('md:text-base');
     });
 
     it('applies larger CTA font for full and large sizes', () => {
@@ -160,7 +158,7 @@ describe('HeroSection', () => {
         <HeroSection title="Test" size="full" cta={{text: 'CTA', url: '/'}} />,
       );
       let link = screen.getByTestId('react-router-link');
-      expect(link).toHaveClass('text-lg');
+      expect(link).toHaveClass('text-base');
 
       rerender(
         <HeroSection
@@ -170,7 +168,7 @@ describe('HeroSection', () => {
         />,
       );
       link = screen.getByTestId('react-router-link');
-      expect(link).toHaveClass('text-lg');
+      expect(link).toHaveClass('text-base');
     });
 
     it('applies base CTA font for medium and small sizes', () => {
@@ -182,13 +180,13 @@ describe('HeroSection', () => {
         />,
       );
       let link = screen.getByTestId('react-router-link');
-      expect(link).toHaveClass('text-base');
+      expect(link).toHaveClass('text-sm');
 
       rerender(
         <HeroSection title="Test" size="small" cta={{text: 'CTA', url: '/'}} />,
       );
       link = screen.getByTestId('react-router-link');
-      expect(link).toHaveClass('text-base');
+      expect(link).toHaveClass('text-sm');
     });
   });
 
@@ -250,19 +248,10 @@ describe('HeroSection', () => {
       });
     });
 
-    it('uses 100vw sizes for full size heroes', () => {
+    it('uses 100vw sizes for all hero images', () => {
       render(<HeroSection title="Test" size="full" image={mockImage} />);
       const image = screen.getByTestId('shopify-image');
       expect(image).toHaveAttribute('data-sizes', '100vw');
-    });
-
-    it('uses responsive sizes for non-full size heroes', () => {
-      render(<HeroSection title="Test" size="medium" image={mockImage} />);
-      const image = screen.getByTestId('shopify-image');
-      expect(image).toHaveAttribute(
-        'data-sizes',
-        '(min-width: 1280px) 1280px, 100vw',
-      );
     });
 
     it('applies background color when no image', () => {
@@ -299,91 +288,6 @@ describe('HeroSection', () => {
     });
   });
 
-  describe('Overlay', () => {
-    const mockImage = {
-      url: 'https://example.com/image.jpg',
-      altText: 'Test',
-    };
-
-    it('renders overlay when image is provided', () => {
-      const {container} = render(
-        <HeroSection title="Test" image={mockImage} />,
-      );
-      const overlays = container.querySelectorAll('.absolute.inset-0');
-      // Should have 2 absolute inset-0 divs: one for image container, one for overlay
-      expect(overlays.length).toBeGreaterThanOrEqual(2);
-    });
-
-    it('only renders overlay when image is present', () => {
-      const {container} = render(
-        <HeroSection title="Test" overlayOpacity={50} />,
-      );
-      const overlays = container.querySelectorAll('.absolute.inset-0');
-      // No overlay should render without an image
-      expect(overlays.length).toBe(0);
-    });
-
-    it('applies correct opacity from 0-100 scale', () => {
-      const {container} = render(
-        <HeroSection title="Test" image={mockImage} overlayOpacity={50} />,
-      );
-      const overlays = Array.from(container.querySelectorAll('.absolute.inset-0'));
-      // Find the overlay div (not the image container)
-      const overlay = overlays.find(
-        (el) => !el.querySelector('[data-testid="shopify-image"]'),
-      );
-      expect(overlay).toHaveStyle({opacity: '0.5'});
-    });
-
-    it('uses default overlay opacity of 40', () => {
-      const {container} = render(
-        <HeroSection title="Test" image={mockImage} />,
-      );
-      const overlays = Array.from(container.querySelectorAll('.absolute.inset-0'));
-      const overlay = overlays.find(
-        (el) => !el.querySelector('[data-testid="shopify-image"]'),
-      );
-      expect(overlay).toHaveStyle({opacity: '0.4'});
-    });
-
-    it('applies custom overlay color', () => {
-      const {container} = render(
-        <HeroSection
-          title="Test"
-          image={mockImage}
-          overlayColor="#ff0000"
-        />,
-      );
-      const overlays = Array.from(container.querySelectorAll('.absolute.inset-0'));
-      const overlay = overlays.find(
-        (el) => !el.querySelector('[data-testid="shopify-image"]'),
-      );
-      expect(overlay).toHaveStyle({backgroundColor: '#ff0000'});
-    });
-
-    it('uses default overlay color #000', () => {
-      const {container} = render(
-        <HeroSection title="Test" image={mockImage} />,
-      );
-      const overlays = Array.from(container.querySelectorAll('.absolute.inset-0'));
-      const overlay = overlays.find(
-        (el) => !el.querySelector('[data-testid="shopify-image"]'),
-      );
-      expect(overlay).toHaveStyle({backgroundColor: '#000'});
-    });
-
-    it('does not render overlay with zero opacity', () => {
-      const {container} = render(
-        <HeroSection title="Test" image={mockImage} overlayOpacity={0} />,
-      );
-      const overlays = Array.from(container.querySelectorAll('.absolute.inset-0'));
-      const overlay = overlays.find(
-        (el) => !el.querySelector('[data-testid="shopify-image"]'),
-      );
-      // Overlay should not render when opacity is 0
-      expect(overlay).toBeUndefined();
-    });
-  });
 
   describe('Text Color', () => {
     it('applies white text color class by default', () => {
@@ -406,7 +310,7 @@ describe('HeroSection', () => {
       expect(subtitle).toHaveClass('text-black');
     });
 
-    it('inverts CTA button colors for white text', () => {
+    it('renders CTA with white border and text', () => {
       render(
         <HeroSection
           title="Test"
@@ -415,23 +319,9 @@ describe('HeroSection', () => {
         />,
       );
       const link = screen.getByTestId('react-router-link');
-      expect(link).toHaveClass('bg-white');
-      expect(link).toHaveClass('text-black');
-      expect(link).toHaveClass('hover:bg-gray-100');
-    });
-
-    it('inverts CTA button colors for black text', () => {
-      render(
-        <HeroSection
-          title="Test"
-          textColor="black"
-          cta={{text: 'CTA', url: '/'}}
-        />,
-      );
-      const link = screen.getByTestId('react-router-link');
-      expect(link).toHaveClass('bg-black');
       expect(link).toHaveClass('text-white');
-      expect(link).toHaveClass('hover:bg-gray-900');
+      expect(link).toHaveClass('border-2');
+      expect(link).toHaveClass('border-white');
     });
   });
 
@@ -526,9 +416,9 @@ describe('HeroSection', () => {
       expect(contentWrapper).toHaveClass('justify-center');
     });
 
-    it('wraps content in max-w-4xl container', () => {
+    it('wraps content in max-w-2xl container', () => {
       const {container} = render(<HeroSection title="Test" />);
-      const innerContainer = container.querySelector('.max-w-4xl');
+      const innerContainer = container.querySelector('.max-w-2xl');
       expect(innerContainer).toBeInTheDocument();
     });
   });
@@ -576,8 +466,6 @@ describe('HeroSection', () => {
         textColor: 'black',
         alignment: 'left',
         cta: {text: 'Click here', url: '/destination'},
-        overlayOpacity: 60,
-        overlayColor: '#0000ff',
         className: 'custom',
       };
 
@@ -589,31 +477,6 @@ describe('HeroSection', () => {
       expect(screen.getByText('Complete subtitle')).toBeInTheDocument();
       expect(screen.getByTestId('shopify-image')).toBeInTheDocument();
       expect(screen.getByTestId('react-router-link')).toBeInTheDocument();
-    });
-
-    it('handles boundary overlay opacity values', () => {
-      const {container, rerender} = render(
-        <HeroSection title="Test" image={{url: 'test.jpg'}} overlayOpacity={0} />,
-      );
-      let overlays = Array.from(container.querySelectorAll('.absolute.inset-0'));
-      let overlay = overlays.find(
-        (el) => !el.querySelector('[data-testid="shopify-image"]'),
-      );
-      // Opacity 0 should not render overlay
-      expect(overlay).toBeUndefined();
-
-      rerender(
-        <HeroSection
-          title="Test"
-          image={{url: 'test.jpg'}}
-          overlayOpacity={100}
-        />,
-      );
-      overlays = Array.from(container.querySelectorAll('.absolute.inset-0'));
-      overlay = overlays.find(
-        (el) => !el.querySelector('[data-testid="shopify-image"]'),
-      );
-      expect(overlay).toHaveStyle({opacity: '1'});
     });
 
     it('handles long title text without breaking layout', () => {
@@ -749,9 +612,9 @@ describe('HeroSection', () => {
       );
       expect(imageContainer).toBeInTheDocument();
 
-      // Overlay should be absolute inset-0
-      const overlays = container.querySelectorAll('.absolute.inset-0');
-      expect(overlays.length).toBeGreaterThanOrEqual(2);
+      // Dark overlay should be present for readability
+      const overlay = container.querySelector('.absolute.inset-0.bg-black\\/40');
+      expect(overlay).toBeInTheDocument();
 
       // Content should have z-10
       const content = container.querySelector('.relative.z-10');

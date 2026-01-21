@@ -46,18 +46,16 @@ export function ProductForm({
                   // as an anchor tag
                   return (
                     <Link
-                      className="product-options-item"
+                      className={`product-options-item ${
+                        selected ? 'product-options-item--selected' : ''
+                      } ${
+                        !available ? 'product-options-item--unavailable' : ''
+                      }`}
                       key={option.name + name}
                       prefetch="intent"
                       preventScrollReset
                       replace
                       to={`/products/${handle}?${variantUriQuery}`}
-                      style={{
-                        border: selected
-                          ? '1px solid black'
-                          : '1px solid transparent',
-                        opacity: available ? 1 : 0.3,
-                      }}
                     >
                       <ProductOptionSwatch swatch={swatch} name={name} />
                     </Link>
@@ -71,16 +69,14 @@ export function ProductForm({
                   return (
                     <button
                       type="button"
-                      className={`product-options-item${
-                        exists && !selected ? ' link' : ''
+                      className={`product-options-item ${
+                        exists && !selected ? 'link' : ''
+                      } ${
+                        selected ? 'product-options-item--selected' : ''
+                      } ${
+                        !available ? 'product-options-item--unavailable' : ''
                       }`}
                       key={option.name + name}
-                      style={{
-                        border: selected
-                          ? '1px solid black'
-                          : '1px solid transparent',
-                        opacity: available ? 1 : 0.3,
-                      }}
                       disabled={!exists}
                       onClick={() => {
                         if (!selected) {
@@ -97,11 +93,13 @@ export function ProductForm({
                 }
               })}
             </div>
-            <br />
           </div>
         );
       })}
       <AddToCartButton
+        variant="primary"
+        size="large"
+        fullWidth={true}
         disabled={!selectedVariant || !selectedVariant.availableForSale}
         onClick={() => {
           open('cart');

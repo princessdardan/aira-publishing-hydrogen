@@ -7,31 +7,58 @@ export function AddToCartButton({
   disabled,
   lines,
   onClick,
+  variant = 'primary',
+  size = 'medium',
+  fullWidth = false,
 }: {
   analytics?: unknown;
   children: React.ReactNode;
   disabled?: boolean;
   lines: Array<OptimisticCartLineInput>;
   onClick?: () => void;
+  variant?: 'primary' | 'secondary' | 'outline';
+  size?: 'small' | 'medium' | 'large';
+  fullWidth?: boolean;
 }) {
   return (
     <CartForm route="/cart" inputs={{lines}} action={CartForm.ACTIONS.LinesAdd}>
-      {(fetcher: FetcherWithComponents<any>) => (
-        <>
-          <input
-            name="analytics"
-            type="hidden"
-            value={JSON.stringify(analytics)}
-          />
-          <button
-            type="submit"
-            onClick={onClick}
-            disabled={disabled ?? fetcher.state !== 'idle'}
-          >
-            {children}
-          </button>
-        </>
-      )}
+      {(fetcher: FetcherWithComponents<any>) => {
+        const isLoading = fetcher.state !== 'idle';
+        const buttonClasses = [
+          'add-to-cart-button',
+          `add-to-cart-button--${variant}`,
+          `add-to-cart-button--${size}`,
+          fullWidth ? 'add-to-cart-button--full-width' : '',
+          isLoading ? 'add-to-cart-button--loading' : '',
+        ]
+          .filter(Boolean)
+          .join(' ');
+
+        return (
+          <>
+            <input
+              name="analytics"
+              type="hidden"
+              value={JSON.stringify(analytics)}
+            />
+            <button
+              type="submit"
+              onClick={onClick}
+              disabled={disabled ?? isLoading}
+              className={buttonClasses}
+            >
+              {isLoading ? (
+                <>
+                  <span className="add-to-cart-button-spinner" aria-hidden="true"></span>
+                  <span>Adding...</span>
+                </>
+              ) : (
+                children
+              )}
+            </button>
+          </>
+        );
+      }}
     </CartForm>
   );
 }

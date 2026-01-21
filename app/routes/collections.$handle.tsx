@@ -3,9 +3,16 @@ import type {Route} from './+types/collections.$handle';
 import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
-import {ProductItem} from '~/components/ProductItem';
+import {ProductCard, PRODUCT_CARD_FRAGMENT} from '~/components/ProductCard';
 import {HeroSection} from '~/components/HeroSection';
-import type {ProductItemFragment} from 'storefrontapi.generated';
+import {
+  CollectionCarousel,
+  COLLECTION_CAROUSEL_FRAGMENT,
+} from '~/components/CollectionCarousel';
+import type {
+  ProductCardFragment,
+  CollectionCarouselFragment,
+} from 'storefrontapi.generated';
 
 export const meta: Route.MetaFunction = ({data}) => {
   return [{title: `Hydrogen | ${data?.collection.title ?? ''} Collection`}];
@@ -54,6 +61,7 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
 
   return {
     collection,
+    subcollections: collection?.metafield?.references?.nodes || [],
   };
 }
 
@@ -67,7 +75,10 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 }
 
 export default function Collection() {
-  const {collection} = useLoaderData<typeof loader>();
+  const {collection, subcollections} = useLoaderData<typeof loader>();
+
+  // Prioritize hero metafield image, fallback to collection image
+  const heroImage = collection.heroImage?.reference?.image || collection.image;
 
   return (
     <div className="collection">
@@ -75,19 +86,26 @@ export default function Collection() {
         size="medium"
         title={collection.title}
         subtitle={collection.description}
-        image={collection.image}
-        overlayOpacity={30}
+        image={heroImage}
       />
+      {subcollections.length > 0 && (
+        <CollectionCarousel
+          collections={subcollections}
+          title={`Explore ${collection.title}`}
+        />
+      )}
       <div className="py-8">
-        <PaginatedResourceSection<ProductItemFragment>
+        <PaginatedResourceSection<ProductCardFragment>
           connection={collection.products}
           resourcesClassName="products-grid"
         >
           {({node: product, index}) => (
-            <ProductItem
+            <ProductCard
               key={product.id}
               product={product}
+              variant="grid"
               loading={index < 8 ? 'eager' : undefined}
+              showVendor={true}
             />
           )}
         </PaginatedResourceSection>
@@ -104,36 +122,10 @@ export default function Collection() {
   );
 }
 
-const PRODUCT_ITEM_FRAGMENT = `#graphql
-  fragment MoneyProductItem on MoneyV2 {
-    amount
-    currencyCode
-  }
-  fragment ProductItem on Product {
-    id
-    handle
-    title
-    featuredImage {
-      id
-      altText
-      url
-      width
-      height
-    }
-    priceRange {
-      minVariantPrice {
-        ...MoneyProductItem
-      }
-      maxVariantPrice {
-        ...MoneyProductItem
-      }
-    }
-  }
-` as const;
-
 // NOTE: https://shopify.dev/docs/api/storefront/2022-04/objects/collection
 const COLLECTION_QUERY = `#graphql
-  ${PRODUCT_ITEM_FRAGMENT}
+  ${PRODUCT_CARD_FRAGMENT}
+  ${COLLECTION_CAROUSEL_FRAGMENT}
   query Collection(
     $handle: String!
     $country: CountryCode
@@ -155,6 +147,31 @@ const COLLECTION_QUERY = `#graphql
         width
         height
       }
+      heroImage: metafield(namespace: "custom", key: "hero_section_image") {
+        reference {
+          ... on MediaImage {
+            id
+            image {
+              id
+              url
+              altText
+              width
+              height
+            }
+          }
+        }
+      }
+      metafield(namespace: "custom", key: "subcollections") {
+        id
+        type
+        references(first: 20) {
+          nodes {
+            ... on Collection {
+              ...CollectionCarousel
+            }
+          }
+        }
+      }
       products(
         first: $first,
         last: $last,
@@ -162,7 +179,7 @@ const COLLECTION_QUERY = `#graphql
         after: $endCursor
       ) {
         nodes {
-          ...ProductItem
+          ...ProductCard
         }
         pageInfo {
           hasPreviousPage

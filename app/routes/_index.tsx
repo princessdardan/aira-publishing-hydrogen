@@ -2,11 +2,13 @@ import {Await, useLoaderData} from 'react-router';
 import type {Route} from './+types/_index';
 import {Suspense} from 'react';
 import type {RecommendedProductsQuery} from 'storefrontapi.generated';
-import {ProductItem} from '~/components/ProductItem';
+import {ProductCard, PRODUCT_CARD_FRAGMENT} from '~/components/ProductCard';
 import {HeroSection} from '~/components/HeroSection';
+import {CollectionCarousel} from '~/components/CollectionCarousel';
+import {FeatureSections} from '~/components/FeatureSections';
 
 export const meta: Route.MetaFunction = () => {
-  return [{title: 'Hydrogen | Home'}];
+  return [{title: 'Aira Publishing - Complete Solutions for Your Ontario Classroom'}];
 };
 
 export async function loader(args: Route.LoaderArgs) {
@@ -24,13 +26,21 @@ export async function loader(args: Route.LoaderArgs) {
  * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  */
 async function loadCriticalData({context}: Route.LoaderArgs) {
-  const [{collections}] = await Promise.all([
+  const [{collections}, {metaobjects: features}, subcollectionsData] = await Promise.all([
     context.storefront.query(FEATURED_COLLECTION_QUERY),
+    context.storefront.query(FEATURE_SECTIONS_QUERY),
+    context.storefront.query(SUBCOLLECTIONS_QUERY, {
+      variables: {
+        handle: 'all', // Replace 'all' with the handle of your parent collection
+      },
+    }),
     // Add other queries here, so that they are loaded in parallel
   ]);
 
   return {
     featuredCollection: collections.nodes[0],
+    features,
+    subcollections: subcollectionsData.collection?.metafield?.references?.nodes || [],
   };
 }
 
@@ -55,24 +65,26 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 
 export default function Homepage() {
   const data = useLoaderData<typeof loader>();
-  const featuredCollection = data.featuredCollection;
 
   return (
     <div className="home">
       <HeroSection
-        size="full"
-        title={featuredCollection?.title || 'Welcome to AIRA Publishing'}
-        subtitle={featuredCollection?.description || 'Discover curated collections and exceptional products'}
-        image={featuredCollection?.image || null}
-        cta={
-          featuredCollection
-            ? {
-                text: 'Shop Now',
-                url: `/collections/${featuredCollection.handle}`,
-              }
-            : undefined
-        }
+        size="large"
+        title="Make Lesson Planning Easy"
+        subtitle="COMPLETE SOLUTIONS FOR YOUR ONTARIO CLASSROOM"
+        alignment="left"
+        cta={{
+          text: 'SHOP NOW',
+          url: '/collections/all',
+        }}
       />
+      {data.subcollections && data.subcollections.length > 0 && (
+        <CollectionCarousel
+          collections={data.subcollections}
+          title="Shop by Grade Level"
+        />
+      )}
+      <FeatureSections features={data.features} />
       <RecommendedProducts products={data.recommendedProducts} />
     </div>
   );
@@ -92,8 +104,13 @@ function RecommendedProducts({
           {(response) => (
             <div className="recommended-products-grid">
               {response
-                ? response.products.nodes.map((product) => (
-                    <ProductItem key={product.id} product={product} />
+                ? response.products.nodes.map((product, index) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      variant="grid"
+                      loading={index < 4 ? 'eager' : 'lazy'}
+                    />
                   ))
                 : null}
             </div>
@@ -130,17 +147,50 @@ const FEATURED_COLLECTION_QUERY = `#graphql
 ` as const;
 
 const RECOMMENDED_PRODUCTS_QUERY = `#graphql
-  fragment RecommendedProduct on Product {
+  ${PRODUCT_CARD_FRAGMENT}
+  query RecommendedProducts ($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    products(first: 4, sortKey: UPDATED_AT, reverse: true) {
+      nodes {
+        ...ProductCard
+      }
+    }
+  }
+` as const;
+
+const FEATURE_SECTIONS_QUERY = `#graphql
+  query FeatureSections($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    metaobjects(type: "feature_section", first: 10) {
+      nodes {
+        id
+        fields {
+          key
+          value
+          reference {
+            __typename
+            ... on MediaImage {
+              id
+              image {
+                url
+                altText
+                width
+                height
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+` as const;
+
+const SUBCOLLECTIONS_QUERY = `#graphql
+  fragment CollectionCarousel on Collection {
     id
     title
     handle
-    priceRange {
-      minVariantPrice {
-        amount
-        currencyCode
-      }
-    }
-    featuredImage {
+    image {
       id
       url
       altText
@@ -148,11 +198,25 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
       height
     }
   }
-  query RecommendedProducts ($country: CountryCode, $language: LanguageCode)
-    @inContext(country: $country, language: $language) {
-    products(first: 4, sortKey: UPDATED_AT, reverse: true) {
-      nodes {
-        ...RecommendedProduct
+  query SubcollectionsQuery(
+    $handle: String!
+    $country: CountryCode
+    $language: LanguageCode
+  ) @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      id
+      handle
+      title
+      metafield(namespace: "custom", key: "subcollections") {
+        id
+        type
+        references(first: 20) {
+          nodes {
+            ... on Collection {
+              ...CollectionCarousel
+            }
+          }
+        }
       }
     }
   }

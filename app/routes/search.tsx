@@ -3,6 +3,7 @@ import type {Route} from './+types/search';
 import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
 import {SearchForm} from '~/components/SearchForm';
 import {SearchResults} from '~/components/SearchResults';
+import {PRODUCT_CARD_FRAGMENT} from '~/components/ProductCard';
 import {
   type RegularSearchReturn,
   type PredictiveSearchReturn,
@@ -53,12 +54,11 @@ export default function SearchPage() {
               ref={inputRef}
               type="search"
             />
-            &nbsp;
             <button type="submit">Search</button>
           </>
         )}
       </SearchForm>
-      {error && <p style={{color: 'red'}}>{error}</p>}
+      {error && <p className="search-error">{error}</p>}
       {!term || !result?.total ? (
         <SearchResults.Empty />
       ) : (
@@ -80,16 +80,16 @@ export default function SearchPage() {
 /**
  * Regular search query and fragments
  * (adjust as needed)
+ *
+ * Note: Search extends ProductCard fragment with variant-specific data
+ * for more accurate search results showing the first available variant
  */
 const SEARCH_PRODUCT_FRAGMENT = `#graphql
   fragment SearchProduct on Product {
+    ...ProductCard
     __typename
-    handle
-    id
     publishedAt
-    title
     trackingParameters
-    vendor
     selectedOrFirstAvailableVariant(
       selectedOptions: []
       ignoreUnknownOptions: true
@@ -120,6 +120,7 @@ const SEARCH_PRODUCT_FRAGMENT = `#graphql
       }
     }
   }
+  ${PRODUCT_CARD_FRAGMENT}
 ` as const;
 
 const SEARCH_PAGE_FRAGMENT = `#graphql

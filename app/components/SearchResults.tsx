@@ -1,6 +1,8 @@
 import {Link} from 'react-router';
-import {Image, Money, Pagination} from '@shopify/hydrogen';
+import {Pagination} from '@shopify/hydrogen';
 import {urlWithTrackingParams, type RegularSearchReturn} from '~/lib/search';
+import {ProductCard} from '~/components/ProductCard';
+import type {SearchProductFragment} from 'storefrontapi.generated';
 
 type SearchItems = RegularSearchReturn['result']['items'];
 type PartialSearchResult<ItemType extends keyof SearchItems> = Pick<
@@ -113,20 +115,22 @@ function SearchResultsProducts({
               term,
             });
 
-            const price = product?.selectedOrFirstAvailableVariant?.price;
-            const image = product?.selectedOrFirstAvailableVariant?.image;
+            // Transform search product data to ProductCard format
+            // Use variant image/price if available, otherwise fall back to product data
+            const productData = transformSearchProductToCardFormat(product);
 
             return (
               <div className="search-results-item" key={product.id}>
-                <Link prefetch="intent" to={productUrl}>
-                  {image && (
-                    <Image data={image} alt={product.title} width={50} />
-                  )}
-                  <div>
-                    <p>{product.title}</p>
-                    <small>{price && <Money data={price} />}</small>
-                  </div>
-                </Link>
+                <ProductCard
+                  product={productData}
+                  variant="list"
+                  loading="lazy"
+                  showVendor={true}
+                  showCompareAtPrice={true}
+                  onClick={() => {
+                    // Track search click if needed
+                  }}
+                />
               </div>
             );
           });
@@ -138,7 +142,7 @@ function SearchResultsProducts({
                   {isLoading ? 'Loading...' : <span>↑ Load previous</span>}
                 </PreviousLink>
               </div>
-              <div>
+              <div className="search-products-grid">
                 {ItemsMarkup}
                 <br />
               </div>
@@ -154,6 +158,35 @@ function SearchResultsProducts({
       <br />
     </div>
   );
+}
+
+/**
+ * Transforms a SearchProduct (with variant data) to ProductCard format
+ * Prioritizes variant-specific image and price for accurate search results
+ */
+function transformSearchProductToCardFormat(
+  product: SearchProductFragment,
+): any {
+  const variant = product.selectedOrFirstAvailableVariant;
+
+  return {
+    id: product.id,
+    title: product.title,
+    handle: product.handle,
+    vendor: product.vendor,
+    description: product.description,
+    // Use variant image if available, otherwise featured image
+    featuredImage: variant?.image || product.featuredImage,
+    // Use variant price if available, otherwise price range
+    priceRange: {
+      minVariantPrice: variant?.price || product.priceRange.minVariantPrice,
+    },
+    compareAtPriceRange: variant?.compareAtPrice
+      ? {
+          minVariantPrice: variant.compareAtPrice,
+        }
+      : product.compareAtPriceRange,
+  };
 }
 
 function SearchResultsEmpty() {

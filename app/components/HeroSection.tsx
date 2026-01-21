@@ -58,37 +58,27 @@ export interface HeroSectionProps {
   };
 
   /**
-   * Optional overlay opacity (0-100)
-   */
-  overlayOpacity?: number;
-
-  /**
-   * Optional overlay color
-   */
-  overlayColor?: string;
-
-  /**
    * Additional CSS classes
    */
   className?: string;
 }
 
 const SIZE_CLASSES: Record<HeroSize, string> = {
-  full: 'h-screen',
-  large: 'h-[75vh]',
-  medium: 'h-[50vh]',
-  small: 'h-[33vh]',
+  full: 'hero-section--full',
+  large: 'hero-section--large',
+  medium: 'hero-section--medium',
+  small: 'hero-section--small',
 };
 
 const ALIGNMENT_CLASSES: Record<NonNullable<HeroSectionProps['alignment']>, string> = {
-  left: 'items-start text-left',
-  center: 'items-center text-center',
-  right: 'items-end text-right',
+  left: 'hero-section__content--left',
+  center: 'hero-section__content--center',
+  right: 'hero-section__content--right',
 };
 
 const TEXT_COLOR_CLASSES: Record<NonNullable<HeroSectionProps['textColor']>, string> = {
-  white: 'text-white',
-  black: 'text-black',
+  white: 'white',
+  black: 'black',
 };
 
 export function HeroSection({
@@ -100,93 +90,61 @@ export function HeroSection({
   textColor = 'white',
   alignment = 'center',
   cta,
-  overlayOpacity = 40,
-  overlayColor = '#000',
   className = '',
 }: HeroSectionProps) {
   const sizeClass = SIZE_CLASSES[size];
   const alignmentClass = ALIGNMENT_CLASSES[alignment];
   const textColorClass = TEXT_COLOR_CLASSES[textColor];
 
+  // Determine image alignment class based on alignment prop
+  const imageAlignmentClass =
+    alignment === 'left' ? 'hero-section__image--left' :
+    alignment === 'right' ? 'hero-section__image--right' :
+    'hero-section__image--center';
+
   return (
     <section
-      className={`hero-section relative w-full ${sizeClass} overflow-hidden ${className}`}
+      className={`hero-section ${sizeClass} ${className}`}
       style={{
         backgroundColor: image ? undefined : backgroundColor,
       }}
     >
       {/* Background Image */}
       {image && (
-        <div className="absolute inset-0 w-full h-full">
+        <div className="hero-section__image-wrapper">
           <Image
             data={{
               ...image,
               altText: image.altText || title || 'Hero background image',
             }}
-            sizes={
-              size === 'full'
-                ? '100vw'
-                : '(min-width: 1280px) 1280px, 100vw'
-            }
-            className="w-full h-full object-cover"
+            sizes="100vw"
+            className={`hero-section__image ${imageAlignmentClass}`}
             loading={size === 'full' ? 'eager' : 'lazy'}
           />
         </div>
       )}
 
-      {/* Overlay */}
-      {image && overlayOpacity > 0 && (
-        <div
-          className="absolute inset-0 w-full h-full"
-          style={{
-            backgroundColor: overlayColor,
-            opacity: overlayOpacity / 100,
-          }}
-        />
+      {/* Dark overlay for text readability */}
+      {image && (
+        <div className="hero-section__overlay" aria-hidden="true" />
       )}
 
       {/* Content */}
-      <div className={`relative z-10 h-full flex flex-col justify-center ${alignmentClass} px-6 md:px-12 lg:px-16`}>
-        <div className="max-w-4xl">
-          <h1
-            className={`font-bold ${textColorClass} ${
-              size === 'full' ? 'text-5xl md:text-7xl lg:text-8xl' :
-              size === 'large' ? 'text-4xl md:text-6xl lg:text-7xl' :
-              size === 'medium' ? 'text-3xl md:text-5xl lg:text-6xl' :
-              'text-2xl md:text-4xl lg:text-5xl'
-            } mb-4`}
-          >
+      <div className={`hero-section__content ${alignmentClass}`}>
+        <div className="hero-section__inner">
+          <h1 className={`hero-section__title hero-section__title--${textColorClass}`}>
             {title}
           </h1>
 
           {subtitle && (
-            <p
-              className={`${textColorClass} ${
-                size === 'full' || size === 'large'
-                  ? 'text-lg md:text-xl lg:text-2xl'
-                  : 'text-base md:text-lg lg:text-xl'
-              } mb-8 max-w-2xl ${
-                alignment === 'center' ? 'mx-auto' : ''
-              }`}
-            >
+            <p className={`hero-section__subtitle hero-section__subtitle--${textColorClass}`}>
               {subtitle}
             </p>
           )}
 
           {cta && (
             <div>
-              <Link
-                to={cta.url}
-                className={`inline-block px-8 py-4 font-semibold transition-colors rounded focus:outline-none focus:ring-4 ${
-                  textColor === 'white'
-                    ? 'bg-white text-black hover:bg-gray-100 focus:ring-white/50'
-                    : 'bg-black text-white hover:bg-gray-900 focus:ring-black/50'
-                } ${
-                  size === 'full' || size === 'large'
-                    ? 'text-lg'
-                    : 'text-base'
-                }`}
-              >
+              <Link to={cta.url} className="hero-section__cta">
                 {cta.text}
               </Link>
             </div>

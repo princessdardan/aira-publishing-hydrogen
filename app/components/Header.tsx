@@ -26,9 +26,14 @@ export function Header({
   const {shop, menu} = header;
   return (
     <header className="header">
-      <NavLink prefetch="intent" to="/" style={activeLinkStyle} end>
-        <strong>{shop.name}</strong>
-      </NavLink>
+      <div className="header-logo">
+        <NavLink prefetch="intent" to="/" end>
+          <div className="logo-container">
+            <div className="logo-initials">AP</div>
+            <span className="logo-text">Aira Publishing</span>
+          </div>
+        </NavLink>
+      </div>
       <HeaderMenu
         menu={menu}
         viewport="desktop"
@@ -61,7 +66,9 @@ export function HeaderMenu({
           end
           onClick={close}
           prefetch="intent"
-          style={activeLinkStyle}
+          className={({isActive, isPending}) =>
+            `header-menu-item${isActive ? ' header-menu-item--active' : ''}${isPending ? ' header-menu-item--pending' : ''}`
+          }
           to="/"
         >
           Home
@@ -79,12 +86,13 @@ export function HeaderMenu({
             : item.url;
         return (
           <NavLink
-            className="header-menu-item"
+            className={({isActive, isPending}) =>
+              `header-menu-item${isActive ? ' header-menu-item--active' : ''}${isPending ? ' header-menu-item--pending' : ''}`
+            }
             end
             key={item.id}
             onClick={close}
             prefetch="intent"
-            style={activeLinkStyle}
             to={url}
           >
             {item.title}
@@ -102,7 +110,13 @@ function HeaderCtas({
   return (
     <nav className="header-ctas" role="navigation">
       <HeaderMenuMobileToggle />
-      <NavLink prefetch="intent" to="/account" style={activeLinkStyle}>
+      <NavLink
+        prefetch="intent"
+        to="/account"
+        className={({isActive, isPending}) =>
+          `${isActive ? 'active' : ''}${isPending ? ' pending' : ''}`
+        }
+      >
         <Suspense fallback="Sign in">
           <Await resolve={isLoggedIn} errorElement="Sign in">
             {(isLoggedIn) => (isLoggedIn ? 'Account' : 'Sign in')}
@@ -216,16 +230,3 @@ const FALLBACK_HEADER_MENU = {
     },
   ],
 };
-
-function activeLinkStyle({
-  isActive,
-  isPending,
-}: {
-  isActive: boolean;
-  isPending: boolean;
-}) {
-  return {
-    fontWeight: isActive ? 'bold' : undefined,
-    color: isPending ? 'grey' : 'black',
-  };
-}

@@ -27,7 +27,6 @@ export function HomepageHeroExample() {
         text: 'Shop Now',
         url: '/collections/featured',
       }}
-      overlayOpacity={40}
     />
   );
 }
@@ -45,7 +44,6 @@ export function CollectionPageHeroExample() {
         url: 'https://cdn.shopify.com/...',
         altText: 'Summer collection',
       }}
-      overlayOpacity={30}
     />
   );
 }
@@ -82,8 +80,6 @@ export function LeftAlignedHeroExample() {
         text: 'Browse Collection',
         url: '/collections/new-arrivals',
       }}
-      overlayOpacity={50}
-      overlayColor="#000"
     />
   );
 }
@@ -103,8 +99,6 @@ export function RightAlignedLightHeroExample() {
         url: 'https://cdn.shopify.com/...',
         altText: 'Limited edition products',
       }}
-      overlayOpacity={20}
-      overlayColor="#fff"
     />
   );
 }
@@ -142,7 +136,6 @@ export function CategoryHeroExample() {
         text: 'Explore Books',
         url: '/collections/books',
       }}
-      overlayOpacity={45}
       className="mb-12"
     />
   );
