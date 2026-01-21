@@ -1,0 +1,72 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit security checks..."
+echo ""
+
+# 1. Check for potential secrets in staged files
+echo "📝 Checking for potential secrets..."
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -n "$STAGED_FILES" ]; then
+  # Common patterns for secrets (basic checks)
+  SECRET_PATTERNS=(
+    "password\s*=\s*['\"][^'\"]+['\"]"
+    "api[_-]?key\s*=\s*['\"][^'\"]+['\"]"
+    "secret\s*=\s*['\"][^'\"]+['\"]"
+    "token\s*=\s*['\"][^'\"]+['\"]"
+    "private[_-]?key"
+    "aws[_-]?secret"
+    "AKIA[0-9A-Z]{16}"
+    "sk_live_[0-9a-zA-Z]{24}"
+  )
+
+  SECRET_FOUND=0
+  for pattern in "${SECRET_PATTERNS[@]}"; do
+    if echo "$STAGED_FILES" | xargs grep -iE "$pattern" 2>/dev/null | grep -v "\.example\|\.sample\|\.md\|\.template"; then
+      SECRET_FOUND=1
+    fi
+  done
+
+  if [ $SECRET_FOUND -eq 1 ]; then
+    echo ""
+    echo "⚠️  WARNING: Potential secrets detected in staged files!"
+    echo "Please review the matches above and ensure no real secrets are being committed."
+    echo ""
+    read -p "Are you sure you want to continue? (y/N) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+      echo "❌ Commit aborted."
+      exit 1
+    fi
+  else
+    echo "✅ No obvious secrets detected"
+  fi
+fi
+
+echo ""
+
+# 2. Run npm audit for high/critical vulnerabilities
+echo "🔒 Running npm security audit..."
+if ! npm audit --audit-level=high --dry-run > /dev/null 2>&1; then
+  echo ""
+  echo "⚠️  WARNING: High or critical vulnerabilities detected!"
+  echo "Run 'npm audit' to see details."
+  echo ""
+  read -p "Continue with commit anyway? (y/N) " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "❌ Commit aborted. Please fix vulnerabilities first."
+    exit 1
+  fi
+else
+  echo "✅ No high/critical vulnerabilities detected"
+fi
+
+echo ""
+echo "✨ Security checks passed!"
+echo ""
+
+# 3. Run tests
+echo "🧪 Running tests..."
+npm test

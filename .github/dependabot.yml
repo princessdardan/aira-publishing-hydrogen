@@ -1,0 +1,35 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+
+    # Group patch updates together to reduce PR noise
+    groups:
+      patch-updates:
+        update-types:
+          - "patch"
+
+    # Security updates always get their own PR for visibility
+    # This is enabled by default but explicitly stated for clarity
+
+    # Auto-merge rules for low-risk updates
+    allow:
+      - dependency-type: "direct"
+        update-types: ["minor", "patch"]
+      - dependency-type: "indirect"
+        update-types: ["patch"]
+
+    # Ignore major updates for critical framework dependencies
+    # These require careful manual review and testing
+    ignore:
+      - dependency-name: "@shopify/hydrogen"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-router"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
