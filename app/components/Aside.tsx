@@ -5,6 +5,8 @@ import {
   useEffect,
   useState,
 } from 'react';
+import {X} from 'lucide-react';
+import {Portal} from '~/components/Portal';
 
 type AsideType = 'search' | 'cart' | 'mobile' | 'closed';
 type AsideContextValue = {
@@ -53,22 +55,24 @@ export function Aside({
   }, [close, expanded]);
 
   return (
-    <div
-      aria-modal
-      className={`overlay ${expanded ? 'expanded' : ''}`}
-      role="dialog"
-    >
-      <button className="close-outside" onClick={close} />
-      <aside>
-        <header>
-          <h3>{heading}</h3>
-          <button className="close reset" onClick={close} aria-label="Close">
-            &times;
-          </button>
-        </header>
-        <main>{children}</main>
-      </aside>
-    </div>
+    <Portal>
+      <div
+        aria-modal
+        className={`overlay ${expanded ? 'expanded' : ''}`}
+        role="dialog"
+      >
+        <button className="close-outside" onClick={close} />
+        <aside>
+          <header>
+            <h3>{heading}</h3>
+            <button className="close reset" onClick={close} aria-label="Close">
+              <X size={24} />
+            </button>
+          </header>
+          <main>{children}</main>
+        </aside>
+      </div>
+    </Portal>
   );
 }
 

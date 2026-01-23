@@ -144,12 +144,6 @@ export const CART_QUERY_FRAGMENT = `#graphql
       totalAmount {
         ...Money
       }
-      totalDutyAmount {
-        ...Money
-      }
-      totalTaxAmount {
-        ...Money
-      }
     }
     note
     attributes {
@@ -174,6 +168,9 @@ const MENU_FRAGMENT = `#graphql
   }
   fragment ChildMenuItem on MenuItem {
     ...MenuItem
+    items {
+      ...MenuItem
+    }
   }
   fragment ParentMenuItem on MenuItem {
     ...MenuItem
@@ -185,6 +182,30 @@ const MENU_FRAGMENT = `#graphql
     id
     items {
       ...ParentMenuItem
+    }
+  }
+` as const;
+
+export const HERO_SECTION_FRAGMENT = `#graphql
+  fragment HeroSection on Metaobject {
+    id
+    type
+    fields {
+      key
+      value
+      reference {
+        __typename
+        ... on MediaImage {
+          id
+          image {
+            id
+            url
+            altText
+            width
+            height
+          }
+        }
+      }
     }
   }
 ` as const;

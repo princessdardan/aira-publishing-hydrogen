@@ -17,7 +17,7 @@ export function AddToCartButton({
   lines: Array<OptimisticCartLineInput>;
   onClick?: () => void;
   variant?: 'primary' | 'secondary' | 'outline';
-  size?: 'small' | 'medium' | 'large';
+  size?: 'small' | 'medium' | 'large' | 'compact';
   fullWidth?: boolean;
 }) {
   return (

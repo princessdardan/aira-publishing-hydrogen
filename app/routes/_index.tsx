@@ -6,6 +6,8 @@ import {ProductCard, PRODUCT_CARD_FRAGMENT} from '~/components/ProductCard';
 import {HeroSection} from '~/components/HeroSection';
 import {CollectionCarousel} from '~/components/CollectionCarousel';
 import {FeatureSections} from '~/components/FeatureSections';
+import {HERO_SECTION_FRAGMENT} from '~/lib/fragments';
+import {extractHeroData} from '~/lib/hero';
 
 export const meta: Route.MetaFunction = () => {
   return [{title: 'Aira Publishing - Complete Solutions for Your Ontario Classroom'}];
@@ -26,7 +28,7 @@ export async function loader(args: Route.LoaderArgs) {
  * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  */
 async function loadCriticalData({context}: Route.LoaderArgs) {
-  const [{collections}, {metaobjects: features}, subcollectionsData] = await Promise.all([
+  const [{collections}, {metaobjects: features}, subcollectionsData, shopHeroData] = await Promise.all([
     context.storefront.query(FEATURED_COLLECTION_QUERY),
     context.storefront.query(FEATURE_SECTIONS_QUERY),
     context.storefront.query(SUBCOLLECTIONS_QUERY, {
@@ -34,13 +36,28 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
         handle: 'all', // Replace 'all' with the handle of your parent collection
       },
     }),
+    context.storefront.query(SHOP_HERO_QUERY),
     // Add other queries here, so that they are loaded in parallel
   ]);
+
+  // Extract hero data from shop metafield
+  const heroData = extractHeroData(shopHeroData?.shop?.heroSection?.reference);
+
+  // Log warning if hero metafield is not configured
+  if (!shopHeroData?.shop?.heroSection) {
+    console.warn(
+      'Hero section metafield not found. Please create a metafield with:',
+      '\n- Namespace: custom',
+      '\n- Key: hero_section',
+      '\n- Type: metaobject_reference (pointing to hero_section metaobject)',
+    );
+  }
 
   return {
     featuredCollection: collections.nodes[0],
     features,
     subcollections: subcollectionsData.collection?.metafield?.references?.nodes || [],
+    heroData,
   };
 }
 
@@ -66,17 +83,27 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 export default function Homepage() {
   const data = useLoaderData<typeof loader>();
 
+  // Use dynamic hero data from shop metafield, or fallback to hardcoded values
+  const heroData = data.heroData || {
+    heading: 'Make Lesson Planning Easy',
+    subheading: 'COMPLETE SOLUTIONS FOR YOUR ONTARIO CLASSROOM',
+    size: 'large' as const,
+    contentAlignment: 'left' as const,
+    cta: {
+      text: 'SHOP NOW',
+      url: '/collections/all',
+    },
+  };
+
   return (
     <div className="home">
       <HeroSection
-        size="large"
-        title="Make Lesson Planning Easy"
-        subtitle="COMPLETE SOLUTIONS FOR YOUR ONTARIO CLASSROOM"
-        alignment="left"
-        cta={{
-          text: 'SHOP NOW',
-          url: '/collections/all',
-        }}
+        size={heroData.size}
+        title={heroData.heading}
+        subtitle={heroData.subheading ?? undefined}
+        image={heroData.image ?? undefined}
+        alignment={heroData.contentAlignment}
+        cta={heroData.cta ?? undefined}
       />
       {data.subcollections && data.subcollections.length > 0 && (
         <CollectionCarousel
@@ -216,6 +243,25 @@ const SUBCOLLECTIONS_QUERY = `#graphql
               ...CollectionCarousel
             }
           }
+        }
+      }
+    }
+  }
+` as const;
+
+const SHOP_HERO_QUERY = `#graphql
+  ${HERO_SECTION_FRAGMENT}
+  query ShopHero($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    shop {
+      id
+      name
+      heroSection: metafield(namespace: "custom", key: "hero_section") {
+        id
+        type
+        value
+        reference {
+          ...HeroSection
         }
       }
     }

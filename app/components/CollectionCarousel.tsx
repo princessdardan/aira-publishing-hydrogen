@@ -15,7 +15,7 @@ export function CollectionCarousel({
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
-      const scrollAmount = 400;
+      const scrollAmount = scrollContainerRef.current.offsetWidth;
       const newScrollPosition =
         scrollContainerRef.current.scrollLeft +
         (direction === 'left' ? -scrollAmount : scrollAmount);

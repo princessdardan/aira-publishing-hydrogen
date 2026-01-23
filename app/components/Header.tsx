@@ -1,4 +1,4 @@
-import {Suspense} from 'react';
+import {Suspense, useState} from 'react';
 import {Await, NavLink, useAsyncValue} from 'react-router';
 import {
   type CartViewPayload,
@@ -7,6 +7,9 @@ import {
 } from '@shopify/hydrogen';
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
+import {Menu, Search, ShoppingCart, User} from 'lucide-react';
+import {MegaMenu} from '~/components/MegaMenu';
+import {SearchCommandMenu} from '~/components/SearchCommandMenu';
 
 interface HeaderProps {
   header: HeaderQuery;
@@ -74,31 +77,15 @@ export function HeaderMenu({
           Home
         </NavLink>
       )}
-      {(menu || FALLBACK_HEADER_MENU).items.map((item) => {
-        if (!item.url) return null;
-
-        // if the url is internal, we strip the domain
-        const url =
-          item.url.includes('myshopify.com') ||
-          item.url.includes(publicStoreDomain) ||
-          item.url.includes(primaryDomainUrl)
-            ? new URL(item.url).pathname
-            : item.url;
-        return (
-          <NavLink
-            className={({isActive, isPending}) =>
-              `header-menu-item${isActive ? ' header-menu-item--active' : ''}${isPending ? ' header-menu-item--pending' : ''}`
-            }
-            end
-            key={item.id}
-            onClick={close}
-            prefetch="intent"
-            to={url}
-          >
-            {item.title}
-          </NavLink>
-        );
-      })}
+      {(menu || FALLBACK_HEADER_MENU).items.map((item) => (
+        <MegaMenu
+          key={item.id}
+          item={item}
+          primaryDomainUrl={primaryDomainUrl}
+          publicStoreDomain={publicStoreDomain}
+          onClose={viewport === 'mobile' ? close : undefined}
+        />
+      ))}
     </nav>
   );
 }
@@ -107,25 +94,34 @@ function HeaderCtas({
   isLoggedIn,
   cart,
 }: Pick<HeaderProps, 'isLoggedIn' | 'cart'>) {
+  const [searchOpen, setSearchOpen] = useState(false);
+
   return (
-    <nav className="header-ctas" role="navigation">
-      <HeaderMenuMobileToggle />
-      <NavLink
-        prefetch="intent"
-        to="/account"
-        className={({isActive, isPending}) =>
-          `${isActive ? 'active' : ''}${isPending ? ' pending' : ''}`
-        }
-      >
-        <Suspense fallback="Sign in">
-          <Await resolve={isLoggedIn} errorElement="Sign in">
-            {(isLoggedIn) => (isLoggedIn ? 'Account' : 'Sign in')}
-          </Await>
-        </Suspense>
-      </NavLink>
-      <SearchToggle />
-      <CartToggle cart={cart} />
-    </nav>
+    <>
+      <nav className="header-ctas" role="navigation">
+        <HeaderMenuMobileToggle />
+        <NavLink
+          prefetch="intent"
+          to="/account"
+          className={({isActive, isPending}) =>
+            `${isActive ? 'active' : ''}${isPending ? ' pending' : ''}`
+          }
+          aria-label="Account"
+        >
+          <Suspense fallback={<User size={20} />}>
+            <Await resolve={isLoggedIn} errorElement={<User size={20} />}>
+              {(isLoggedIn) => <User size={20} />}
+            </Await>
+          </Suspense>
+        </NavLink>
+        <SearchToggle onOpen={() => setSearchOpen(true)} />
+        <CartToggle cart={cart} />
+      </nav>
+      <SearchCommandMenu
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+      />
+    </>
   );
 }
 
@@ -135,17 +131,17 @@ function HeaderMenuMobileToggle() {
     <button
       className="header-menu-mobile-toggle reset"
       onClick={() => open('mobile')}
+      aria-label="Open menu"
     >
-      <h3>☰</h3>
+      <Menu size={24} />
     </button>
   );
 }
 
-function SearchToggle() {
-  const {open} = useAside();
+function SearchToggle({onOpen}: {onOpen: () => void}) {
   return (
-    <button className="reset" onClick={() => open('search')}>
-      Search
+    <button className="reset" onClick={onOpen} aria-label="Search">
+      <Search size={20} />
     </button>
   );
 }
@@ -167,8 +163,11 @@ function CartBadge({count}: {count: number | null}) {
           url: window.location.href || '',
         } as CartViewPayload);
       }}
+      className="cart-toggle"
+      aria-label={`Cart with ${count ?? 0} items`}
     >
-      Cart {count === null ? <span>&nbsp;</span> : count}
+      <ShoppingCart size={20} />
+      {count !== null && count > 0 && <span className="cart-badge">{count}</span>}
     </a>
   );
 }
@@ -197,7 +196,7 @@ const FALLBACK_HEADER_MENU = {
       resourceId: null,
       tags: [],
       title: 'Collections',
-      type: 'HTTP',
+      type: 'HTTP' as const,
       url: '/collections',
       items: [],
     },
@@ -206,7 +205,7 @@ const FALLBACK_HEADER_MENU = {
       resourceId: null,
       tags: [],
       title: 'Blog',
-      type: 'HTTP',
+      type: 'HTTP' as const,
       url: '/blogs/journal',
       items: [],
     },
@@ -215,7 +214,7 @@ const FALLBACK_HEADER_MENU = {
       resourceId: null,
       tags: [],
       title: 'Policies',
-      type: 'HTTP',
+      type: 'HTTP' as const,
       url: '/policies',
       items: [],
     },
@@ -224,7 +223,7 @@ const FALLBACK_HEADER_MENU = {
       resourceId: 'gid://shopify/Page/92591030328',
       tags: [],
       title: 'About',
-      type: 'PAGE',
+      type: 'PAGE' as const,
       url: '/pages/about',
       items: [],
     },

@@ -1,6 +1,9 @@
 import {useLoaderData} from 'react-router';
 import type {Route} from './+types/pages.$handle';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {HeroSection} from '~/components/HeroSection';
+import {HERO_SECTION_FRAGMENT} from '~/lib/fragments';
+import {extractHeroData} from '~/lib/hero';
 
 export const meta: Route.MetaFunction = ({data}) => {
   return [{title: `Hydrogen | ${data?.page.title ?? ''}`}];
@@ -40,8 +43,12 @@ async function loadCriticalData({context, request, params}: Route.LoaderArgs) {
 
   redirectIfHandleIsLocalized(request, {handle: params.handle, data: page});
 
+  // Extract hero data from page metafield
+  const heroData = extractHeroData(page?.heroSection?.reference);
+
   return {
     page,
+    heroData,
   };
 }
 
@@ -55,19 +62,31 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 }
 
 export default function Page() {
-  const {page} = useLoaderData<typeof loader>();
+  const {page, heroData} = useLoaderData<typeof loader>();
 
   return (
     <div className="page">
-      <header>
-        <h1>{page.title}</h1>
-      </header>
+      {heroData ? (
+        <HeroSection
+          size={heroData.size}
+          title={heroData.heading}
+          subtitle={heroData.subheading ?? undefined}
+          image={heroData.image ?? undefined}
+          alignment={heroData.contentAlignment}
+          cta={heroData.cta ?? undefined}
+        />
+      ) : (
+        <header>
+          <h1>{page.title}</h1>
+        </header>
+      )}
       <main dangerouslySetInnerHTML={{__html: page.body}} />
     </div>
   );
 }
 
 const PAGE_QUERY = `#graphql
+  ${HERO_SECTION_FRAGMENT}
   query Page(
     $language: LanguageCode,
     $country: CountryCode,
@@ -82,6 +101,11 @@ const PAGE_QUERY = `#graphql
       seo {
         description
         title
+      }
+      heroSection: metafield(namespace: "custom", key: "hero_section") {
+        reference {
+          ...HeroSection
+        }
       }
     }
   }

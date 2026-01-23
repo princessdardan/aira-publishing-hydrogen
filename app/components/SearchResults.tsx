@@ -123,7 +123,7 @@ function SearchResultsProducts({
               <div className="search-results-item" key={product.id}>
                 <ProductCard
                   product={productData}
-                  variant="list"
+                  variant="grid"
                   loading="lazy"
                   showVendor={true}
                   showCompareAtPrice={true}

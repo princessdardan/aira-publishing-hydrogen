@@ -9,8 +9,8 @@ import {
   useSelectedOptionInUrlParam,
 } from '@shopify/hydrogen';
 import {ProductPrice} from '~/components/ProductPrice';
-import {ProductImage} from '~/components/ProductImage';
 import {ProductForm} from '~/components/ProductForm';
+import {ProductImageCarousel} from '~/components/ProductImageCarousel';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
 export const meta: Route.MetaFunction = ({data}) => {
@@ -96,44 +96,59 @@ export default function Product() {
   });
 
   const {title, descriptionHtml} = product;
+  const productImages = product.images?.nodes ?? [];
 
   return (
-    <div className="product">
-      <ProductImage image={selectedVariant?.image} showZoom={true} />
-      <div className="product-main">
-        <div className="product-header">
-          {product.vendor && (
-            <p className="product-vendor">{product.vendor}</p>
-          )}
-          <h1 className="product-title">{title}</h1>
-        </div>
-
-        <div className="product-price-section">
-          <ProductPrice
-            price={selectedVariant?.price}
-            compareAtPrice={selectedVariant?.compareAtPrice}
-            size="large"
-            showSavings={true}
+    <div className="product-page-modern">
+      {/* Product Image */}
+      <div>
+        <div className="product-page-image-section">
+          <ProductImageCarousel 
+            images={productImages} 
+            productTitle={title}
+            className="product-carousel--small"
           />
         </div>
-
-        <div className="product-form-section">
-          <ProductForm
-            productOptions={productOptions}
-            selectedVariant={selectedVariant}
-          />
-        </div>
-
-        {descriptionHtml && (
-          <div className="product-description-section">
-            <h2 className="product-description-heading">Description</h2>
-            <div
-              className="product-description-content"
-              dangerouslySetInnerHTML={{__html: descriptionHtml}}
-            />
-          </div>
-        )}
       </div>
+      <div className="product-page-container">
+        {/* Product Info */}
+        <div className="product-page-info-section">
+          <div className="product-info-container">
+            <div className="product-header">
+              {product.vendor && (
+                <p className="product-vendor">{product.vendor}</p>
+              )}
+              <h1 className="product-title">{title}</h1>
+            </div>
+
+            <div className="product-price-section">
+              <ProductPrice
+                price={selectedVariant?.price}
+                compareAtPrice={selectedVariant?.compareAtPrice}
+                size="large"
+                showSavings={true}
+              />
+            </div>
+
+            {descriptionHtml && (
+              <div className="product-description-section">
+                <div
+                  className="product-description-content"
+                  dangerouslySetInnerHTML={{__html: descriptionHtml}}
+                />
+              </div>
+            )}
+
+            <div className="product-form-section">
+              <ProductForm
+                productOptions={productOptions}
+                selectedVariant={selectedVariant}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <Analytics.ProductView
         data={{
           products: [
@@ -219,6 +234,16 @@ const PRODUCT_FRAGMENT = `#graphql
     }
     selectedOrFirstAvailableVariant(selectedOptions: $selectedOptions, ignoreUnknownOptions: true, caseInsensitiveMatch: true) {
       ...ProductVariant
+    }
+    images(first: 20) {
+      nodes {
+        __typename
+        id
+        url
+        altText
+        width
+        height
+      }
     }
     adjacentVariants (selectedOptions: $selectedOptions) {
       ...ProductVariant

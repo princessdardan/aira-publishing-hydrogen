@@ -1,5 +1,6 @@
-import {Link, useNavigate} from 'react-router';
-import {type MappedProductOptions} from '@shopify/hydrogen';
+import {Link, useNavigate, useRouteLoaderData} from 'react-router';
+import {useState} from 'react';
+import {type MappedProductOptions, ShopPayButton} from '@shopify/hydrogen';
 import type {
   Maybe,
   ProductOptionValueSwatch,
@@ -7,6 +8,7 @@ import type {
 import {AddToCartButton} from './AddToCartButton';
 import {useAside} from './Aside';
 import type {ProductFragment} from 'storefrontapi.generated';
+import type {RootLoader} from '~/root';
 
 export function ProductForm({
   productOptions,
@@ -17,15 +19,35 @@ export function ProductForm({
 }) {
   const navigate = useNavigate();
   const {open} = useAside();
+  const rootData = useRouteLoaderData<RootLoader>('root');
+  const [quantity, setQuantity] = useState(1);
+
+  const decrementQuantity = () => {
+    if (quantity > 1) setQuantity(quantity - 1);
+  };
+
+  const incrementQuantity = () => {
+    setQuantity(quantity + 1);
+  };
+
   return (
     <div className="product-form">
       {productOptions.map((option) => {
         // If there is only a single value in the option values, don't display the option
         if (option.optionValues.length === 1) return null;
 
+        const isSizeOption = option.name.toLowerCase() === 'size';
+
         return (
           <div className="product-options" key={option.name}>
-            <h5>{option.name}</h5>
+            <div className="product-options-header">
+              <h5>Select {option.name}</h5>
+              {isSizeOption && (
+                <a href="#size-guide" className="product-size-guide-link">
+                  Size Guide
+                </a>
+              )}
+            </div>
             <div className="product-options-grid">
               {option.optionValues.map((value) => {
                 const {
@@ -96,28 +118,77 @@ export function ProductForm({
           </div>
         );
       })}
-      <AddToCartButton
-        variant="primary"
-        size="large"
-        fullWidth={true}
-        disabled={!selectedVariant || !selectedVariant.availableForSale}
-        onClick={() => {
-          open('cart');
-        }}
-        lines={
-          selectedVariant
-            ? [
-                {
-                  merchandiseId: selectedVariant.id,
-                  quantity: 1,
-                  selectedVariant,
-                },
-              ]
-            : []
-        }
-      >
-        {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
-      </AddToCartButton>
+      {/* Quantity Selector */}
+      <div className="product-quantity-selector">
+        <label htmlFor="quantity" className="product-quantity-label">
+          Quantity
+        </label>
+        <div className="product-quantity-controls">
+          <button
+            type="button"
+            onClick={decrementQuantity}
+            disabled={quantity <= 1}
+            className="product-quantity-button"
+            aria-label="Decrease quantity"
+          >
+            −
+          </button>
+          <input
+            type="number"
+            id="quantity"
+            min="1"
+            value={quantity}
+            onChange={(e) => {
+              const val = parseInt(e.target.value, 10);
+              if (!isNaN(val) && val > 0) setQuantity(val);
+            }}
+            className="product-quantity-input"
+            aria-label="Product quantity"
+          />
+          <button
+            type="button"
+            onClick={incrementQuantity}
+            className="product-quantity-button"
+            aria-label="Increase quantity"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      <div className="product-checkout-buttons">
+        <AddToCartButton
+          variant="primary"
+          size="compact"
+          fullWidth={false}
+          disabled={!selectedVariant || !selectedVariant.availableForSale}
+          onClick={() => {
+            open('cart');
+          }}
+          lines={
+            selectedVariant
+              ? [
+                  {
+                    merchandiseId: selectedVariant.id,
+                    quantity,
+                    selectedVariant,
+                  },
+                ]
+              : []
+          }
+        >
+          {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
+        </AddToCartButton>
+
+        {selectedVariant?.availableForSale && rootData?.publicStoreDomain && (
+          <div className="shop-pay-button-wrapper">
+            <ShopPayButton
+              variantIds={[selectedVariant.id]}
+              storeDomain={rootData.publicStoreDomain}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

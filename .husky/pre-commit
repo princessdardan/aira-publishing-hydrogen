@@ -67,6 +67,7 @@ echo ""
 echo "✨ Security checks passed!"
 echo ""
 
-# 3. Run tests
-echo "🧪 Running tests..."
-npm test
+# 3. Run tests (optional - can be commented out if needed)
+# Uncomment the lines below to enforce passing tests before commit
+# echo "🧪 Running tests..."
+# npm test

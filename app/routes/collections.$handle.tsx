@@ -13,6 +13,8 @@ import type {
   ProductCardFragment,
   CollectionCarouselFragment,
 } from 'storefrontapi.generated';
+import {HERO_SECTION_FRAGMENT} from '~/lib/fragments';
+import {extractHeroData, type HeroData} from '~/lib/hero';
 
 export const meta: Route.MetaFunction = ({data}) => {
   return [{title: `Hydrogen | ${data?.collection.title ?? ''} Collection`}];
@@ -77,16 +79,53 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 export default function Collection() {
   const {collection, subcollections} = useLoaderData<typeof loader>();
 
-  // Prioritize hero metafield image, fallback to collection image
-  const heroImage = collection.heroImage?.reference?.image || collection.image;
+  // Three-tier priority cascade for hero data:
+  // 1. Full hero_section metaobject (new approach)
+  // 2. Legacy hero_section_image metafield + collection data
+  // 3. Collection defaults (image, title, description)
+  let heroData: HeroData;
+
+  if (collection.heroSection?.reference) {
+    // Priority 1: Extract from hero_section metaobject
+    const extracted = extractHeroData(collection.heroSection.reference);
+    if (extracted) {
+      heroData = extracted;
+    } else {
+      // Fallback if extraction fails
+      heroData = {
+        heading: collection.title,
+        subheading: collection.description,
+        image: collection.image,
+        size: 'medium',
+      };
+    }
+  } else if (collection.heroImage?.reference?.image) {
+    // Priority 2: Use legacy hero_section_image metafield with collection data
+    heroData = {
+      heading: collection.title,
+      subheading: collection.description,
+      image: collection.heroImage.reference.image,
+      size: 'medium',
+    };
+  } else {
+    // Priority 3: Collection defaults
+    heroData = {
+      heading: collection.title,
+      subheading: collection.description,
+      image: collection.image,
+      size: 'medium',
+    };
+  }
 
   return (
     <div className="collection">
       <HeroSection
-        size="medium"
-        title={collection.title}
-        subtitle={collection.description}
-        image={heroImage}
+        size={heroData.size}
+        title={heroData.heading}
+        subtitle={heroData.subheading ?? undefined}
+        image={heroData.image ?? undefined}
+        alignment={heroData.contentAlignment}
+        cta={heroData.cta ?? undefined}
       />
       {subcollections.length > 0 && (
         <CollectionCarousel
@@ -126,6 +165,7 @@ export default function Collection() {
 const COLLECTION_QUERY = `#graphql
   ${PRODUCT_CARD_FRAGMENT}
   ${COLLECTION_CAROUSEL_FRAGMENT}
+  ${HERO_SECTION_FRAGMENT}
   query Collection(
     $handle: String!
     $country: CountryCode
@@ -146,6 +186,11 @@ const COLLECTION_QUERY = `#graphql
         altText
         width
         height
+      }
+      heroSection: metafield(namespace: "custom", key: "hero_section") {
+        reference {
+          ...HeroSection
+        }
       }
       heroImage: metafield(namespace: "custom", key: "hero_section_image") {
         reference {

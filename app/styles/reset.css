@@ -78,9 +78,7 @@ body {
   min-height: 100vh;
 }
 
-body > main {
-  margin: 0 1rem 1rem 1rem;
-}
+/* Removed universal margin - spacing is now component-specific */
 
 section {
   padding: 1rem 0;
